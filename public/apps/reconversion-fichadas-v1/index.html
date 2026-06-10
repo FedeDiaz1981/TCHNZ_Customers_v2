@@ -1,0 +1,317 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reconversion Fichadas | Technized</title>
+  
+  <script src="./vendor/xlsx.full.min.js"></script>
+  <script src="./vendor/tailwindcdn.js"></script>
+  <script src="./vendor/lucide.js"></script> 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"Inter"', 'sans-serif'] },
+          colors: {
+            brand: {
+              navy: '#f6f2ff', 
+              blue: '#ff8a00',   /* Azul portal */
+              green: '#ff6a00',  /* Naranja portal */
+              cyan: '#ff9f1c', 
+              bg:   '#090713', 
+            },
+            ui: { text: '#ece7f6', meta: '#b7b0cb', border: '#2f2a45' },
+            state: { success: '#28a745', error: '#dc3545' }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .dot { @apply w-2.5 h-2.5 rounded-full transition-all duration-300; }
+    .dot.ok { @apply bg-state-success shadow-[0_0_0_3px_rgba(40,167,69,0.2)]; }
+    .dot.bad { @apply bg-state-error shadow-[0_0_0_3px_rgba(220,53,69,0.2)]; }
+    .dot:not(.ok):not(.bad) { @apply bg-brand-cyan shadow-[0_0_0_3px_rgba(0,174,239,0.2)]; }
+
+    /* --- ESTILO PORTAL CUSTOMERS --- */
+    .bento-card {
+      background: rgba(22, 16, 36, 0.88);
+      border-radius: 20px;
+      border: 1px solid #3a3356 !important; 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+
+    .bento-card:hover {
+      transform: translateY(-4px);
+      border-color: #ff8a00 !important; 
+      box-shadow: 0 15px 30px -10px rgba(255, 138, 0, 0.28);
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #4c436c; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-brand-bg text-ui-text min-h-screen flex flex-col antialiased">
+
+  <div class="h-1.5 w-full bg-gradient-to-r from-brand-navy via-brand-blue to-brand-cyan"></div>
+
+  <div class="wrap w-full max-w-7xl mx-auto px-6 py-10 flex-grow">
+    <header class="flex justify-between items-center gap-6 mb-10 pb-4 border-b border-white/10">
+      <a href="/customers/tools" class="inline-flex items-center gap-3 min-h-[52px] px-5 rounded-2xl border border-white/10 bg-white/5 text-brand-navy font-bold no-underline">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        Volver a aplicaciones
+      </a>
+      <div class="text-brand-navy font-bold text-lg">Demo_User</div>
+    </header>
+    
+    <header class="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-10">
+      <div>
+        <div class="flex items-center gap-3 mb-1">
+          <i data-lucide="dna" class="text-brand-blue w-8 h-8 stroke-[1.5]"></i>
+          <h1 class="text-5xl md:text-6xl font-bold text-brand-navy tracking-tight">Reconversion Fichadas</h1>
+        </div>
+        <p class="text-brand-blue font-semibold text-sm flex items-center gap-2 uppercase tracking-[0.22em]">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            CONTROL HORARIO
+        </p>
+        <p class="text-ui-meta text-3xl mt-3 max-w-4xl leading-relaxed">
+          Procese archivos de fichadas, unifique jornadas y genere un reporte final listo para auditoría operativa.
+        </p>
+      </div>
+
+      <div class="bg-[#171227] px-5 py-2.5 rounded-full border border-ui-border shadow-sm flex items-center gap-3">
+        <span class="dot" id="dot"></span>
+        <span id="pillText" class="text-xs font-semibold text-ui-meta uppercase tracking-wide">Esperando Archivo</span>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <div class="lg:col-span-4 flex flex-col gap-6">
+        
+        <div class="bento-card p-6 shadow-clinical">
+          <div class="flex items-center gap-2 mb-4 text-brand-navy font-bold">
+            <i data-lucide="settings" class="w-5 h-5 text-brand-cyan"></i>
+            <h2>Panel de control</h2>
+          </div>
+          
+          <div class="space-y-4">
+            <input id="file" type="file" accept=".xlsx,.xlsm,.xls,.csv" 
+              class="block w-full text-sm text-ui-meta file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-brand-bg file:text-brand-blue border border-ui-border rounded-xl p-1 bg-[#151127] focus:outline-none" />
+            
+            <div class="flex gap-2">
+              <button id="run" disabled class="flex-[3] py-3.5 px-6 rounded-xl bg-brand-cyan text-[#fff7ed] font-bold text-sm tracking-wide shadow-lg hover:bg-brand-blue disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2">
+                <i data-lucide="play-circle" class="w-4 h-4"></i> PROCESAR
+              </button>
+              
+              <button id="reset" class="flex-1 py-3.5 px-2 rounded-xl bg-[#1b1630] text-brand-navy font-bold text-sm border border-ui-border hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-300 flex items-center justify-center" title="Reiniciar Sistema">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <div class="pt-2 border-t border-gray-100">
+              <button id="btnManual" class="w-full py-3 rounded-xl border-2 border-brand-blue text-brand-blue font-bold text-[10px] uppercase tracking-[0.15em] hover:bg-brand-blue hover:text-[#fff7ed] transition-all duration-300 flex items-center justify-center gap-2 shadow-sm">
+                <i data-lucide="book-open" class="w-4 h-4"></i>
+                MANUAL DE USUARIO
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="bento-card p-6 shadow-clinical flex-grow flex flex-col min-h-[300px]">
+          <h3 class="text-xs font-bold text-brand-navy uppercase tracking-wider flex items-center gap-2 mb-3">
+              <i data-lucide="clipboard-list" class="w-4 h-4 text-ui-meta"></i> Bitácora del proceso
+          </h3>
+          <pre id="log" class="flex-grow bg-[#151127] border border-ui-border rounded-xl p-4 text-xs font-mono text-ui-text overflow-y-auto whitespace-pre-wrap leading-relaxed shadow-inner"></pre>
+        </div>
+      </div>
+
+      <div class="lg:col-span-8 flex flex-col gap-6">
+        <div class="bento-card p-8 shadow-clinical relative overflow-hidden">
+          <div class="absolute -right-10 -top-10 w-64 h-64 bg-brand-bg rounded-full opacity-50 z-0 pointer-events-none"></div>
+          <div class="relative z-10">
+            <div class="flex justify-between items-end mb-6">
+                <h2 class="text-brand-navy font-bold text-lg">Métricas de validación</h2>
+                <div id="time" class="text-ui-meta text-xs font-mono"></div>
+            </div>
+            <div class="h-2 w-full bg-[#1b1630] rounded-full overflow-hidden mb-8">
+              <div id="barFill" class="h-full w-0 bg-gradient-to-r from-brand-blue to-brand-cyan transition-all duration-700 ease-out"></div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div class="p-4 rounded-xl border border-ui-border bg-brand-bg/40"><span class="text-[10px] font-bold text-ui-meta uppercase block mb-1">Filas Input</span><div id="k_in" class="text-3xl font-bold text-brand-navy">0</div></div>
+              <div class="p-4 rounded-xl border border-ui-border bg-brand-bg/40"><span class="text-[10px] font-bold text-ui-meta uppercase block mb-1">Empleados</span><div id="k_emp" class="text-3xl font-bold text-brand-navy">0</div></div>
+              <div class="p-4 rounded-xl border border-brand-cyan/20 bg-blue-50/50"><span class="text-[10px] font-bold text-brand-blue uppercase block mb-1">Eventos válidos</span><div id="k_merged" class="text-3xl font-bold text-brand-blue">0</div></div>
+              <div class="p-4 rounded-xl border border-ui-border bg-brand-bg/40"><span class="text-[10px] font-bold text-ui-meta uppercase block mb-1">Total Final</span><div id="k_out" class="text-3xl font-bold text-brand-navy">0</div></div>
+              <div class="p-4 rounded-xl border border-green-100 bg-green-50/50"><span class="text-[10px] font-bold text-green-700 uppercase block mb-1">Correctos</span><div id="k_ok" class="text-3xl font-bold text-green-700">0</div></div>
+              <div class="p-4 rounded-xl border border-red-100 bg-red-50/50"><span class="text-[10px] font-bold text-red-700 uppercase block mb-1">Incorrectos</span><div id="k_errRows" class="text-3xl font-bold text-red-700">0</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bento-card p-6 flex items-center justify-between gap-6 flex-wrap">
+          <div class="flex items-center gap-6 text-[11px] text-ui-meta font-bold uppercase tracking-widest opacity-80">
+              <span>Procesamiento Local Seguro</span>
+              <span class="h-3 w-px bg-gray-300"></span>
+              <span>Estructura V13 - 3 Hojas</span>
+          </div>
+          <div class="flex items-center gap-3 flex-wrap">
+            <span class="px-4 py-2 rounded-full border border-ui-border bg-white/5 text-ui-meta text-[11px] font-bold uppercase tracking-widest">Sistema operativo ready</span>
+            <button class="py-3.5 px-8 rounded-2xl bg-brand-cyan text-[#fff7ed] font-bold text-sm tracking-wide shadow-lg border-0 cursor-default">DESCARGAR REPORTE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>lucide.createIcons();</script>
+  <script>
+    /* MOTOR DE PROCESAMIENTO ORIGINAL RECUPERADO */
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      const ui = {
+        file: $("file"), run: $("run"), reset: $("reset"), manual: $("btnManual"), log: $("log"),
+        k_in: $("k_in"), k_emp: $("k_emp"), k_merged: $("k_merged"),
+        k_out: $("k_out"), k_ok: $("k_ok"), k_errRows: $("k_errRows"),
+        stage: $("stage"), time: $("time"), dot: $("dot"), pillText: $("pillText"), barFill: $("barFill")
+      };
+      const state = { file: null };
+      const FIXED_DATE_COL = 9; const FIXED_TIME_COL = 10;
+
+      function pad(n){ return String(n).padStart(2,"0"); }
+      function ts(){ const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+      function nowStamp(){ const d = new Date(); return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()}_${pad(d.getHours())}-${pad(d.getMinutes())}`; }
+      function setPill(kind, text){ ui.pillText.textContent = text; ui.dot.className = "dot" + (kind === "ok" ? " ok" : kind === "bad" ? " bad" : ""); }
+      function setStage(pct){ ui.barFill.style.width = `${Math.max(0, Math.min(100, pct))}%`; }
+      function log(line){ ui.log.textContent += `[${ts()}] ${line}\n`; ui.log.scrollTop = ui.log.scrollHeight; }
+      
+      function superClean(v){ return v == null ? "" : String(v).toLowerCase().replace(/[^a-z0-9]/g, ""); }
+      function normalizeText(v){ return v == null ? "" : String(v).replace(/^\uFEFF/, "").replace(/[\u00A0\u202F\u2009]/g, " ").replace(/\s+/g, " ").trim(); }
+      function normalizeId(v){
+        if (v == null || v === "") return "";
+        if (typeof v === "number" && isFinite(v)) return String(Math.trunc(v));
+        const m = normalizeText(v).match(/^(\d+)/);
+        return m ? m[1] : normalizeText(v);
+      }
+      function parseDateString(v){
+        if (!v) return null;
+        if (typeof v === 'number') { const o = XLSX.SSF.parse_date_code(v); return { y: o.y, m: o.m, d: o.d }; }
+        const s = normalizeText(v);
+        let m = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
+        if (m) return { y: +m[3], m: +m[2], d: +m[1] };
+        return null;
+      }
+      function parseTimeSeconds(v){
+        if (v == null || v === "") return null;
+        if (typeof v === 'number') { let frac = v % 1; return Math.round(frac * 86400); }
+        const s = normalizeText(v).toLowerCase();
+        let m = s.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+        if (!m) return null;
+        let hh = +m[1], mm = +m[2], ss = m[3] ? +m[3] : 0;
+        if (s.includes("pm") && hh < 12) hh += 12;
+        return hh*3600 + mm*60 + ss;
+      }
+      function dateKey(p){ return `${p.y}-${pad(p.m)}-${pad(p.d)}`; }
+      function dateScore(p){ return p.y*10000 + p.m*100 + p.d; }
+      function isNextDay(p1, p2){ const t1 = Date.UTC(p1.y, p1.m-1, p1.d); const t2 = Date.UTC(p2.y, p2.m-1, p2.d); return Math.abs((t2-t1) - 86400000) < 1000; }
+      function classifyEvent(raw){
+        const k = superClean(raw);
+        if (!k) return null;
+        if (k.includes("inicio") || k.includes("entrada") || k.includes("llegada")) return "IN";
+        if (k.includes("fin") || k.includes("salida") || k.includes("partida")) return "OUT";
+        return null;
+      }
+
+      async function process(){
+        ui.run.disabled = true; ui.log.textContent = ""; setPill("neutral", "Procesando"); setStage(10);
+        log("Iniciando lectura del archivo...");
+        const aoa = await (async () => {
+          const buf = await state.file.arrayBuffer();
+          const wb = XLSX.read(buf, { type: 'array', cellDates: false });
+          return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: "" });
+        })();
+        log("Lectura exitosa."); setStage(40);
+
+        const headersClean = aoa[0].map(h => superClean(normalizeText(h)));
+        const findCol = (keys) => { for(let k of keys){ const i = headersClean.findIndex(h => h.includes(k)); if(i >= 0) return i; } return -1; };
+
+        let idxId = findCol(["idusuario", "legajo"]); if(idxId<0) idxId=0;
+        let idxName = findCol(["nombre"]); if(idxName<0) idxName=2;
+        let idxTipo = findCol(["tipodeevento", "evento"]); if(idxTipo<0) idxTipo=6;
+        
+        const rows = aoa.slice(1); ui.k_in.textContent = rows.length;
+        const groups = new Map(); const employees = new Set(); const errLog = [["ID Usuario", "Fecha", "Detalle"]];
+
+        for(let i=0; i<rows.length; i++){
+            const r = rows[i]; const type = classifyEvent(r[idxTipo]); if (!type) continue;
+            const id = normalizeId(r[idxId]); if (!id) continue;
+            const dParts = parseDateString(r[FIXED_DATE_COL]); if (!dParts) continue;
+            const secs = parseTimeSeconds(r[FIXED_TIME_COL]); if (secs == null) continue;
+            if(r[idxName]) employees.add(r[idxName]);
+            const k = `${id}|${dateKey(dParts)}`;
+            if (!groups.has(k)) groups.set(k, { id, dateParts: dParts, baseData: [0,1,2,3,4,5,6,7].map(idx => r[idx] || ""), inSec: null, outSec: null, merged: false });
+            const g = groups.get(k);
+            if (type === "IN") { if (g.inSec === null || secs < g.inSec) g.inSec = secs; }
+            else { if (g.outSec === null || secs > g.outSec) g.outSec = secs; }
+        }
+        ui.k_emp.textContent = employees.size; setStage(70);
+
+        let list = Array.from(groups.values()).sort((a,b) => a.id !== b.id ? (a.id < b.id ? -1 : 1) : dateScore(a.dateParts) - dateScore(b.dateParts));
+        let fixCount = 0;
+        for(let i=0; i < list.length - 1; i++){
+            const curr = list[i], next = list[i+1];
+            if (curr.id !== next.id || !isNextDay(curr.dateParts, next.dateParts)) continue;
+            if (curr.inSec != null && curr.outSec == null && next.outSec != null && next.inSec == null) {
+                 const dur = (86400 - curr.inSec) + next.outSec; if (dur/3600 > 20) continue; 
+                 curr.outSec = next.outSec; next.merged = true; fixCount++;
+                 errLog.push([curr.id, dateKey(curr.dateParts), "INFO: Fusión turno noche aplicada"]);
+            }
+        }
+        ui.k_merged.textContent = fixCount; list = list.filter(g => !g.merged); setStage(90);
+        
+        const outData = [["ID Usuario","Legajo","Nombre","Cargo","Función","Disciplina","Reporta a","Ubicación", "Fecha", "Llegada", "Salida", "Inconsistencia"]];
+        let errCount = 0;
+        for(const g of list){
+            const errs = []; if (g.inSec == null) errs.push("Falta Llegada"); if (g.outSec == null) errs.push("Falta Salida");
+            if (errs.length > 0) { errCount++; errLog.push([g.id, dateKey(g.dateParts), `ERROR: ${errs.join(", ")}`]); }
+            outData.push([...g.baseData, { v: new Date(Date.UTC(g.dateParts.y, g.dateParts.m - 1, g.dateParts.d, 12)), t: 'd', z: 'dd/mm/yyyy' }, g.inSec == null ? "" : { v: g.inSec/86400, t: 'n', z: 'hh:mm:ss' }, g.outSec == null ? "" : { v: g.outSec/86400, t: 'n', z: 'hh:mm:ss' }, errs.join(", ")]);
+        }
+        ui.k_out.textContent = list.length; ui.k_errRows.textContent = errCount; ui.k_ok.textContent = list.length - errCount;
+        
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(outData), "Refact");
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), "Original");
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(errLog), "Errors & Info");
+        XLSX.writeFile(wb, `Refact_V13_${state.file.name.split('.')[0]}_${nowStamp()}.xlsx`);
+        setStage(100); setPill("ok", "Terminado"); log("Reporte generado."); ui.run.disabled = false;
+      }
+
+      // -- EVENTOS --
+      ui.file.addEventListener("change", () => { state.file = ui.file.files[0]; ui.run.disabled = !state.file; if(state.file) { setPill("neutral", "Archivo cargado"); log(`Subido: ${state.file.name}`); } });
+      ui.run.addEventListener("click", () => process().catch(e => { log("ERR: " + e.message); setPill("bad", "Error"); ui.run.disabled = false; }));
+      
+      ui.reset.addEventListener("click", () => {
+        ui.file.value = ""; state.file = null; ui.run.disabled = true; ui.log.textContent = ""; ui.barFill.style.width = "0%";
+        [ui.k_in, ui.k_emp, ui.k_merged, ui.k_out, ui.k_ok, ui.k_errRows].forEach(el => el.textContent = "0");
+        setPill("neutral", "Esperando Archivo"); log("Limpieza de sistema.");
+      });
+
+      // CLICK (y doble click por compatibilidad) para Manual de Usuario
+      const openManual = () => {
+        window.open('./indexmanual.html', '_blank', 'noopener,noreferrer');
+      };
+      ui.manual.addEventListener("click", openManual);
+      ui.manual.addEventListener("dblclick", openManual);
+    })();
+  </script>
+</body>
+</html>
+
+

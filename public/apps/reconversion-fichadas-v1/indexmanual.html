@@ -1,0 +1,270 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reconversion Fichadas V1 - Manual de Usuario | Technized</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="./vendor/tailwindcdn.js"></script>
+  <script src="./vendor/lucide.js"></script>
+
+  <style>
+    :root {
+      --surface-border: rgba(255, 255, 255, 0.08);
+      --secondary: #f49a2f;
+      --tertiary: #d97b1b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: #fff;
+      font-family: 'Inter', system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(239, 124, 14, 0.14), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(118, 54, 140, 0.18), transparent 32%),
+        linear-gradient(180deg, #120d18 0%, #0f0b16 100%);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .manual-shell { max-width: 1180px; margin: 0 auto; }
+
+    .manual-shell h1,
+    .manual-shell h2,
+    .manual-shell h3 { font-family: 'Inter', sans-serif; letter-spacing: -0.025em; }
+
+    .manual-card {
+      background:
+        radial-gradient(120% 120% at 0% 0%, rgba(239, 124, 14, 0.08), transparent 45%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.03));
+      border-radius: 18px;
+      padding: 24px;
+      border: 1px solid var(--surface-border);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(14px);
+    }
+
+    .manual-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(239, 124, 14, 0.4);
+      box-shadow: 0 26px 64px rgba(0, 0, 0, 0.26);
+    }
+
+    .manual-btn-premium {
+      background: linear-gradient(135deg, var(--tertiary), var(--secondary));
+      color: white;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      font-size: 14px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 16px 30px rgba(239, 124, 14, 0.18);
+    }
+
+    .manual-btn-premium:hover { box-shadow: 0 18px 34px rgba(239, 124, 14, 0.24); }
+
+    .manual-btn-outline {
+      border: 2px solid var(--secondary);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      text-decoration: none;
+    }
+
+    .manual-btn-outline:hover {
+      background: linear-gradient(135deg, var(--secondary), var(--tertiary));
+      color: white;
+    }
+
+    .manual-badge-green {
+      background: rgba(239, 124, 14, 0.14);
+      color: #ffd7b0;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .info-box {
+      background: rgba(255, 255, 255, 0.04);
+      border-left: 4px solid var(--secondary);
+      padding: 12px;
+      font-size: 14px;
+      border-radius: 0 8px 8px 0;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .manual-brand-mark {
+      background: linear-gradient(135deg, var(--tertiary), var(--secondary));
+      box-shadow: 0 12px 24px rgba(118, 54, 140, 0.22);
+    }
+
+    .manual-overline { color: rgba(255, 255, 255, 0.58) !important; }
+
+    .manual-grid { display: grid; gap: 20px; }
+    .manual-row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; }
+    .col-span-4 { grid-column: span 4 / span 4; }
+    .col-span-8 { grid-column: span 8 / span 8; }
+
+    @media (max-width: 1024px) {
+      .manual-row { display: flex; flex-direction: column; }
+      .col-span-4, .col-span-8 { grid-column: auto; }
+    }
+
+    .mt-12 { margin-top: 3rem; }
+    .pt-8 { padding-top: 2rem; }
+    .border-top { border-top: 1px solid rgba(255, 255, 255, 0.08); }
+    .flex { display: flex; }
+    .justify-between { justify-content: space-between; }
+    .items-center { align-items: center; }
+    .gap-4 { gap: 1rem; }
+
+    .text-slate-900, .text-slate-800 { color: #fff; }
+    .text-slate-600, .text-slate-500, .text-slate-400 { color: rgba(255, 255, 255, 0.72); }
+    .text-blue-600, .text-blue-500, .text-blue-700, .text-orange-600 { color: var(--secondary); }
+    .bg-blue-600 { background: linear-gradient(135deg, var(--tertiary), var(--secondary)); }
+    .bg-blue-100 { background: rgba(118, 54, 140, 0.22); }
+    .bg-green-100 { background: rgba(239, 124, 14, 0.18); }
+    .text-green-700 { color: #ffd7b0; }
+
+    .chip {
+      width: 2rem; height: 2rem; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .mono {
+      font-family: "Consolas", "SFMono-Regular", monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="manual-shell">
+    <div class="flex" style="justify-content: space-between; align-items: center; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap;">
+      <a href="index.html" class="manual-btn-outline">
+        <i data-lucide="arrow-left"></i>
+        Volver al panel de reconversion
+      </a>
+      <div class="flex items-center gap-4" style="flex-wrap: wrap;">
+        <span class="manual-badge-green">Version 13.0 - Estable</span>
+        <button id="btnDownload" class="manual-btn-premium" type="button">
+          <i data-lucide="download-cloud"></i>
+          Guardar guia
+        </button>
+      </div>
+    </div>
+
+    <header style="margin-bottom: 3rem;">
+      <div class="flex items-center gap-4" style="margin-bottom: .5rem;">
+        <div class="manual-brand-mark" style="padding: .5rem; border-radius: .75rem; color: #fff;">
+          <i data-lucide="activity" style="width: 1.5rem; height: 1.5rem;"></i>
+        </div>
+        <span class="manual-overline" style="font-size: .875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .15em;">Technized • Herramientas internas</span>
+      </div>
+      <h1 class="text-slate-900" style="font-size: 2.25rem; margin: 0;">Manual de Usuario</h1>
+      <p class="text-slate-500" style="margin-top: .35rem;">Gestion y procesamiento de marcaciones industriales Time Tracking.</p>
+    </header>
+
+    <main class="manual-grid">
+      <div class="manual-row">
+        <section class="manual-card col-span-8">
+          <h2 class="text-slate-800" style="font-size: 1.25rem; margin: 0 0 1rem; display:flex; gap:.5rem; align-items:center;">
+            <i data-lucide="zap" class="text-blue-600"></i> Proposito del sistema
+          </h2>
+          <p class="text-slate-600" style="line-height: 1.7; margin-bottom: 1rem;">
+            Esta aplicacion actua como un motor de limpieza para los registros de asistencia. Toma datos brutos de relojes quimicos o digitales y los transforma en una estructura clara de Llegada/Salida, resolviendo discrepancias automaticamente.
+          </p>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;">
+            <div class="info-box">
+              <span style="font-weight:700; display:block; margin-bottom:.3rem;">Entrada</span>
+              Excel (.xlsx) o CSV con columnas de legajo, nombre y tiempos.
+            </div>
+            <div class="info-box">
+              <span style="font-weight:700; display:block; margin-bottom:.3rem;">Salida</span>
+              Reporte refinado con hoja adicional de auditoria "Errors & Info".
+            </div>
+          </div>
+        </section>
+
+        <section class="manual-card col-span-4">
+          <h3 class="text-slate-800" style="font-size: 1.1rem; margin:0 0 1rem;">Guia express</h3>
+          <div style="display:flex; flex-direction:column; gap:1rem;">
+            <div class="flex" style="gap: .9rem;"><div class="chip bg-blue-100 text-blue-700">1</div><p style="margin:0;">Carga tu archivo de marcaciones original.</p></div>
+            <div class="flex" style="gap: .9rem;"><div class="chip bg-blue-100 text-blue-700">2</div><p style="margin:0;">Presiona el boton procesar y espera la validacion.</p></div>
+            <div class="flex" style="gap: .9rem;"><div class="chip bg-green-100 text-green-700">3</div><p style="margin:0;">Descarga el reporte <strong>Refact_V13</strong> final.</p></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="manual-row">
+        <section class="manual-card col-span-4">
+          <h3 class="text-slate-800" style="font-size: 1.1rem; margin:0 0 1rem; display:flex; gap:.5rem; align-items:center;"><i data-lucide="git-merge" class="text-blue-600"></i> Logica inteligente</h3>
+          <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:1rem; font-size:.92rem;">
+            <li style="padding-bottom:.75rem; border-bottom:1px solid rgba(255,255,255,.08)"><strong style="display:block;">Identificacion de personas</strong>El sistema limpia automaticamente los legajos (ej: "L-1234" pasa a "1234") para evitar duplicados.</li>
+            <li style="padding-bottom:.75rem; border-bottom:1px solid rgba(255,255,255,.08)"><strong style="display:block;">Unificacion de jornada</strong>El sistema toma la primera llegada y la ultima salida del dia para calcular la permanencia real.</li>
+            <li style="padding-bottom:.75rem; border-bottom:1px solid rgba(255,255,255,.08)"><strong style="display:block;">Fusion turno noche</strong>Si detecta entrada hoy y salida manana (menos de 20hs), une ambas marcas automaticamente.</li>
+            <li style="padding-bottom:.75rem; border-bottom:1px solid rgba(255,255,255,.08)"><strong style="display:block;">Deteccion de columnas</strong>Rastrea palabras clave como "ID", "Legajo" o "Evento" sin configuracion previa.</li>
+            <li><strong class="text-orange-600" style="display:block; font-weight:700;">Alertas de revision</strong>Las fichadas incompletas se envian a la hoja "Errors & Info" para revision manual.</li>
+          </ul>
+        </section>
+
+        <section class="manual-card col-span-8">
+          <h3 class="text-slate-800" style="font-size: 1.1rem; margin:0 0 1rem;">Visualizacion de procesamiento</h3>
+          <div style="background: rgba(255,255,255,.04); border-radius: 12px; padding: 1.2rem; border:1px dashed rgba(255,255,255,.18);">
+            <div class="flex" style="gap:1rem; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+              <div style="text-align:center;">
+                <span class="text-slate-400" style="font-size:10px; font-weight:700; text-transform:uppercase;">Origen (2 filas separadas)</span>
+                <div class="mono" style="margin-top:.5rem; font-size:12px; background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.16); border-radius:10px; padding:.7rem 1rem;">
+                  15/01 - 22:15 (Entrada)<br>
+                  16/01 - 06:45 (Salida)
+                </div>
+              </div>
+              <i data-lucide="arrow-right-circle" class="text-blue-500" style="width: 2rem; height: 2rem;"></i>
+              <div class="bg-blue-600" style="padding: .9rem 1rem; border-radius: .85rem; color:#fff; font-size:.9rem; box-shadow: 0 8px 22px rgba(0,0,0,.22);">
+                <span style="font-weight:700;">Resultado unificado automatico:</span><br>
+                Jornada 15/01: 22:15 -> 06:45<br>
+                <span style="font-size:10px; opacity:.8;">(Fusion nocturna aplicada con exito)</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="mt-12 pt-8 border-top flex justify-between items-center" style="color: rgba(255,255,255,.6); font-size: .9rem;">
+      <p style="margin:0;">© 2026 Technized - Excelencia en procesos</p>
+      <div class="flex gap-4"><i data-lucide="shield-check" style="width:1.2rem;height:1.2rem"></i><i data-lucide="database" style="width:1.2rem;height:1.2rem"></i></div>
+    </footer>
+  </div>
+
+  <script>
+    lucide.createIcons();
+    document.getElementById('btnDownload')?.addEventListener('click', () => {
+      const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'Manual_Usuario_Reconversion_Fichadas_V1.html';
+      a.click();
+    });
+  </script>
+</body>
+</html>

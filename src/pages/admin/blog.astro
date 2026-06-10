@@ -1,0 +1,781 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { getAdminBlogPosts } from "../../lib/portal/admin";
+import { getAdminFlash } from "../../lib/portal/admin-flash";
+import { getModuleContentSection, getPortalModuleConfig } from "../../lib/portal/modules";
+import { withPortalBasePath } from "../../lib/portal/base-path";
+
+const user = Astro.locals.user;
+const supabase = Astro.locals.supabase;
+const portalModule = Astro.locals.portalModule;
+const moduleConfig = getPortalModuleConfig(portalModule);
+const contentSection = getModuleContentSection(portalModule);
+
+if (!user || !supabase) {
+  return Astro.redirect("/login");
+}
+
+if (!contentSection) {
+  return Astro.redirect("/admin");
+}
+
+const flash = getAdminFlash(Astro.url);
+const posts = await getAdminBlogPosts(supabase, portalModule, contentSection);
+const sectionLabel = contentSection === "training" ? "Training" : "Blog";
+
+const statusLabels = {
+  draft: "Borrador",
+  published: "Publicado"
+} as const;
+
+function getDialogId(postId: string) {
+  return `blog-post-dialog-${postId}`;
+}
+
+function formatDateTimeLabel(value: string | null) {
+  if (!value) return "Sin publicar";
+
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
+}
+
+function formatDateTimeInput(value: string | null) {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - offset * 60_000);
+  return localDate.toISOString().slice(0, 16);
+}
+---
+
+<AdminLayout
+  title={`${sectionLabel} | Administracion portal`}
+  description={`Gestion administrativa de ${sectionLabel.toLowerCase()} para ${moduleConfig.name.es}`}
+  userEmail={user.email ?? ""}
+  activePath="/admin/blog"
+  portalModule={portalModule}
+>
+  <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+    {flash && (
+      <div
+        class:list={[
+          "mb-6 rounded-3xl border px-4 py-3.5 text-sm sm:px-5 sm:py-4",
+          flash.tone === "error"
+            ? "border-red-400/30 bg-red-500/10 text-red-50"
+            : "border-emerald-400/30 bg-emerald-500/10 text-emerald-50"
+        ]}
+      >
+        {flash.message}
+      </div>
+    )}
+
+    <section class="space-y-6">
+      <div class="portal-panel rounded-[30px] p-5 sm:p-6">
+        <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div class="max-w-3xl">
+            <p class="portal-eyebrow text-[11px]">Contenido editorial</p>
+            <h2 class="mt-2 text-2xl font-semibold text-white sm:text-3xl">{sectionLabel} del portal</h2>
+            <p class="portal-copy mt-2 hidden text-sm leading-6 sm:block">
+              {contentSection === "training"
+                ? "Crea materiales, publica contenidos y mantene una biblioteca de training para la comunidad del modulo."
+                : "Crea borradores, publica novedades y mantene una biblioteca de contenido para la comunidad privada del portal."}
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="self-start rounded-full border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white/70 sm:self-auto">
+              {posts.length} {contentSection === "training" ? "contenidos" : "articulos"}
+            </span>
+            <button
+              type="button"
+              class="portal-action-link portal-action-link--solid w-full justify-center sm:w-auto"
+              data-open-dialog="create-blog-post-dialog"
+            >
+              {contentSection === "training" ? "Nuevo contenido" : "Nueva publicacion"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="portal-panel rounded-[30px] p-0">
+        <div class="px-4 pt-4 sm:px-6 sm:pt-5">
+          <div class="admin-blog-toolbar">
+            <label class="admin-blog-search">
+              <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+              <input
+                type="search"
+                placeholder="Buscar por titulo, autor, tag o estado"
+                data-blog-search
+              />
+            </label>
+
+            <p class="portal-copy hidden text-xs sm:block sm:text-sm">
+              Click en una fila para editar y publicar el articulo.
+            </p>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <div class="px-4 pb-4 lg:min-w-[1080px] sm:px-6 sm:pb-5">
+            <div class="admin-blog-head">
+              <span>Articulo</span>
+              <span>Estado</span>
+              <span>Publicacion</span>
+              <span>Tags</span>
+              <span>Destacado</span>
+              <span class="text-right">Accion</span>
+            </div>
+
+            <div class="mt-3 space-y-3">
+              {posts.map((post) => {
+                const dialogId = getDialogId(post.id);
+                const searchIndex = `${post.title} ${post.slug} ${post.authorName} ${post.summary ?? ""} ${post.tags.join(" ")} ${statusLabels[post.status]}`
+                  .toLowerCase()
+                  .trim();
+
+                return (
+                  <>
+                    <button
+                      type="button"
+                      class="admin-blog-row"
+                      data-open-dialog={dialogId}
+                      data-blog-row
+                      data-blog-search-value={searchIndex}
+                      aria-label={`Abrir detalle de ${post.title}`}
+                    >
+                      <span class="admin-blog-row__identity">
+                        <span class="admin-blog-icon">
+                          <i class="fa-regular fa-newspaper" aria-hidden="true"></i>
+                        </span>
+                        <span class="min-w-0 text-left">
+                          <strong class="block truncate text-sm text-white">{post.title}</strong>
+                          <span class="portal-copy block truncate text-xs">{post.slug}</span>
+                          <span class="portal-copy block truncate text-xs">{post.authorName}</span>
+                        </span>
+                      </span>
+
+                      <span class={`admin-blog-pill is-${post.status}`}>{statusLabels[post.status]}</span>
+                      <span class="admin-blog-row__date">{formatDateTimeLabel(post.publishedAt)}</span>
+                      <span class="admin-blog-row__tags">{post.tags.length > 0 ? post.tags.join(", ") : "Sin tags"}</span>
+                      <span class="admin-blog-row__featured">{post.isFeatured ? "Si" : "No"}</span>
+                      <span class="admin-blog-row__action text-right text-xs font-semibold uppercase tracking-[0.18em] text-[#ff8c1a]">
+                        Abrir
+                      </span>
+                    </button>
+
+                    <dialog id={dialogId} data-admin-dialog class="admin-blog-dialog">
+                      <div class="admin-blog-dialog__panel portal-panel rounded-[32px] p-0">
+                        <div class="admin-blog-dialog__header flex items-start justify-between gap-4 border-b border-white/10 px-5 py-4 sm:px-6">
+                          <div>
+                            <p class="portal-eyebrow text-[11px]">Detalle de articulo</p>
+                            <h3 class="mt-2 text-xl font-semibold text-white sm:text-2xl">{post.title}</h3>
+                            <p class="portal-copy mt-1 text-sm">/{post.slug}</p>
+                          </div>
+
+                          <button
+                            type="button"
+                            class="rounded-full border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/70 transition hover:border-white/20 hover:text-white"
+                            data-close-dialog
+                          >
+                            Cerrar
+                          </button>
+                        </div>
+
+              <form action={withPortalBasePath("/api/admin/manage")} method="POST" class="flex max-h-[82vh] flex-col">
+                          <input type="hidden" name="action" value="update-blog-post" />
+                          <input type="hidden" name="redirect_to" value="/admin/blog" />
+                          <input type="hidden" name="blog_post_id" value={post.id} />
+                          <input type="hidden" name="current_published_at" value={post.publishedAt ?? ""} />
+
+                          <div class="admin-blog-dialog__body overflow-y-auto px-5 py-5 sm:px-6">
+                            <div class="grid gap-5 xl:grid-cols-[270px_minmax(0,1fr)]">
+                              <aside class="space-y-4">
+                                <div class="rounded-[28px] border border-white/10 bg-black/20 p-4">
+                                  <p class="portal-copy text-xs uppercase tracking-[0.14em]">Resumen</p>
+                                  <div class="mt-4 space-y-3">
+                                    <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                                      <p class="portal-copy text-[11px] uppercase tracking-[0.14em]">Estado</p>
+                                      <strong class="mt-2 block text-base text-white">{statusLabels[post.status]}</strong>
+                                    </div>
+                                    <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                                      <p class="portal-copy text-[11px] uppercase tracking-[0.14em]">Publicacion</p>
+                                      <strong class="mt-2 block text-base text-white">{formatDateTimeLabel(post.publishedAt)}</strong>
+                                    </div>
+                                    <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                                      <p class="portal-copy text-[11px] uppercase tracking-[0.14em]">Tags</p>
+                                      <strong class="mt-2 block text-base text-white">{post.tags.length}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+                              </aside>
+
+                              <div class="space-y-5">
+                                <div class="rounded-[28px] border border-white/10 bg-black/20 p-4 sm:p-5">
+                                  <div>
+                                    <p class="portal-copy text-xs uppercase tracking-[0.14em]">Datos base</p>
+                                    <p class="portal-copy mt-1 text-sm">Identidad editorial y elementos de portada.</p>
+                                  </div>
+
+                                  <div class="mt-4 grid gap-4 lg:grid-cols-2">
+                                    <label class="block">
+                                      <span class="mb-2 block text-sm font-medium text-white/80">Titulo</span>
+                                      <input class="portal-input w-full rounded-2xl px-4 py-3" type="text" name="title" value={post.title} required />
+                                    </label>
+                                    <label class="block">
+                                      <span class="mb-2 block text-sm font-medium text-white/80">Slug</span>
+                                      <input class="portal-input w-full rounded-2xl px-4 py-3" type="text" name="slug" value={post.slug} required />
+                                    </label>
+                                  </div>
+
+                                  <div class="mt-4 grid gap-4 lg:grid-cols-2">
+                                    <label class="block">
+                                      <span class="mb-2 block text-sm font-medium text-white/80">Autor</span>
+                                      <input class="portal-input w-full rounded-2xl px-4 py-3" type="text" name="author_name" value={post.authorName} />
+                                    </label>
+                                    <label class="block">
+                                      <span class="mb-2 block text-sm font-medium text-white/80">Imagen destacada</span>
+                                      <input class="portal-input w-full rounded-2xl px-4 py-3" type="text" name="cover_image_url" value={post.coverImageUrl ?? ""} />
+                                    </label>
+                                  </div>
+                                </div>
+
+                                <div class="rounded-[28px] border border-white/10 bg-black/20 p-4 sm:p-5">
+                                  <label class="block">
+                                    <span class="mb-2 block text-sm font-medium text-white/80">Resumen</span>
+                                    <textarea class="portal-input min-h-24 w-full rounded-2xl px-4 py-3" name="summary">{post.summary ?? ""}</textarea>
+                                  </label>
+
+                                  <label class="mt-4 block">
+                                    <span class="mb-2 block text-sm font-medium text-white/80">Contenido</span>
+                                    <textarea class="portal-input min-h-72 w-full rounded-2xl px-4 py-3" name="content" required>{post.content}</textarea>
+                                  </label>
+                                </div>
+
+                                <div class="rounded-[28px] border border-white/10 bg-black/20 p-4 sm:p-5">
+                                  <div class="grid gap-4 lg:grid-cols-3">
+                                    <label class="block">
+                                      <span class="mb-2 block text-sm font-medium text-white/80">Tags</span>
+                                      <input class="portal-input w-full rounded-2xl px-4 py-3" type="text" name="tags" value={post.tags.join(", ")} />
+                                    </label>
+                                    <label class="block">
+                                      <span class="mb-2 block text-sm font-medium text-white/80">Estado</span>
+                                      <select class="portal-input w-full rounded-2xl px-4 py-3" name="status">
+                                        <option value="draft" selected={post.status === "draft"}>Borrador</option>
+                                        <option value="published" selected={post.status === "published"}>Publicado</option>
+                                      </select>
+                                    </label>
+                                    <label class="block">
+                                      <span class="mb-2 block text-sm font-medium text-white/80">Fecha de publicacion</span>
+                                      <input class="portal-input w-full rounded-2xl px-4 py-3" type="datetime-local" name="published_at" value={formatDateTimeInput(post.publishedAt)} />
+                                    </label>
+                                  </div>
+
+                                  <label class="mt-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
+                                    <input type="hidden" name="is_featured" value="false" />
+                                    <input type="checkbox" name="is_featured" value="true" checked={post.isFeatured} class="h-4 w-4" />
+                                    Articulo destacado
+                                  </label>
+
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="admin-blog-dialog__footer flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-5 py-4 sm:px-6">
+                            <button
+                              type="submit"
+                              name="intent"
+                              value="delete-blog-post"
+                              class="portal-action-link border-red-400/25 bg-red-500/10 text-red-50 hover:border-red-300/30 hover:bg-red-500/15"
+                              data-confirm-submit="Vas a quitar este articulo del blog visible. Esta accion no se puede deshacer. ¿Deseas continuar?"
+                            >
+                              Eliminar articulo
+                            </button>
+
+                            <div class="flex flex-wrap items-center justify-end gap-3">
+                              <button type="button" class="portal-action-link" data-close-dialog>
+                                Cancelar
+                              </button>
+                              <button type="submit" class="portal-action-link portal-action-link--solid">
+                                Guardar cambios
+                              </button>
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                    </dialog>
+                  </>
+                );
+              })}
+            </div>
+
+            <div class="portal-empty-state mt-4 hidden rounded-[24px] px-4 py-5 text-sm" data-blog-empty>
+              No encontramos articulos con ese criterio de busqueda.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <dialog id="create-blog-post-dialog" data-admin-dialog class="admin-blog-dialog admin-blog-dialog--compact">
+    <div class="admin-blog-dialog__panel portal-panel rounded-[32px] p-0">
+      <div class="admin-blog-dialog__header flex items-start justify-between gap-4 border-b border-white/10 px-5 py-4 sm:px-6">
+        <div>
+          <p class="portal-eyebrow text-[11px]">Nueva publicacion</p>
+          <h3 class="mt-2 text-2xl font-semibold text-white">Articulo de blog</h3>
+          <p class="portal-copy mt-1 text-sm">Crea un borrador o publicalo directamente para el portal.</p>
+        </div>
+
+        <button
+          type="button"
+          class="rounded-full border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/70 transition hover:border-white/20 hover:text-white"
+          data-close-dialog
+        >
+          Cerrar
+        </button>
+      </div>
+
+              <form action={withPortalBasePath("/api/admin/manage")} method="POST" class="flex max-h-[82vh] flex-col">
+        <input type="hidden" name="action" value="create-blog-post" />
+        <input type="hidden" name="redirect_to" value="/admin/blog" />
+
+        <div class="admin-blog-dialog__body overflow-y-auto px-5 py-5 sm:px-6">
+          <div class="space-y-4 rounded-[28px] border border-white/10 bg-black/20 p-4 sm:p-5">
+            <div class="grid gap-4 lg:grid-cols-2">
+              <label class="block">
+                <span class="mb-2 block text-sm font-medium text-white/80">Titulo</span>
+                <input class="portal-input w-full rounded-2xl px-4 py-3" type="text" name="title" required />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-sm font-medium text-white/80">Slug</span>
+                <input class="portal-input w-full rounded-2xl px-4 py-3" type="text" name="slug" required />
+              </label>
+            </div>
+
+            <div class="grid gap-4 lg:grid-cols-2">
+              <label class="block">
+                <span class="mb-2 block text-sm font-medium text-white/80">Autor</span>
+                <input class="portal-input w-full rounded-2xl px-4 py-3" type="text" name="author_name" value="Equipo Technized" />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-sm font-medium text-white/80">Imagen destacada</span>
+                <input class="portal-input w-full rounded-2xl px-4 py-3" type="text" name="cover_image_url" />
+              </label>
+            </div>
+
+            <label class="block">
+              <span class="mb-2 block text-sm font-medium text-white/80">Resumen</span>
+              <textarea class="portal-input min-h-24 w-full rounded-2xl px-4 py-3" name="summary"></textarea>
+            </label>
+
+            <label class="block">
+              <span class="mb-2 block text-sm font-medium text-white/80">Contenido</span>
+              <textarea class="portal-input min-h-72 w-full rounded-2xl px-4 py-3" name="content" required></textarea>
+            </label>
+
+            <div class="grid gap-4 lg:grid-cols-3">
+              <label class="block">
+                <span class="mb-2 block text-sm font-medium text-white/80">Tags</span>
+                <input class="portal-input w-full rounded-2xl px-4 py-3" type="text" name="tags" placeholder="Tecnologia, Automatizacion" />
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-sm font-medium text-white/80">Estado</span>
+                <select class="portal-input w-full rounded-2xl px-4 py-3" name="status">
+                  <option value="draft">Borrador</option>
+                  <option value="published">Publicado</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="mb-2 block text-sm font-medium text-white/80">Fecha de publicacion</span>
+                <input class="portal-input w-full rounded-2xl px-4 py-3" type="datetime-local" name="published_at" />
+              </label>
+            </div>
+
+            <label class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
+              <input type="hidden" name="is_featured" value="false" />
+              <input type="checkbox" name="is_featured" value="true" class="h-4 w-4" />
+              Articulo destacado
+            </label>
+          </div>
+        </div>
+
+        <div class="admin-blog-dialog__footer flex flex-wrap items-center justify-end gap-3 border-t border-white/10 px-5 py-4 sm:px-6">
+          <button type="button" class="portal-action-link" data-close-dialog>
+            Cancelar
+          </button>
+          <button type="submit" class="portal-action-link portal-action-link--solid">
+            Guardar articulo
+          </button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+</AdminLayout>
+
+<style>
+  .admin-blog-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .admin-blog-search {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: min(100%, 460px);
+    padding: 0.9rem 1rem;
+    border-radius: 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .admin-blog-search i {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .admin-blog-search input {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #fff;
+    font: inherit;
+  }
+
+  .admin-blog-search input::placeholder {
+    color: rgba(255, 255, 255, 0.42);
+  }
+
+  .admin-blog-head,
+  .admin-blog-row {
+    display: grid;
+    grid-template-columns: minmax(320px, 2fr) minmax(120px, 0.75fr) minmax(150px, 1fr) minmax(180px, 1.2fr) minmax(90px, 0.6fr) minmax(80px, 0.45fr);
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .admin-blog-head {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0 1rem 0.9rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .admin-blog-row {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.35rem;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 0.95rem 1rem;
+    text-align: left;
+    transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+  }
+
+  .admin-blog-row:hover {
+    border-color: rgba(239, 124, 14, 0.36);
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-1px);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+  }
+
+  .admin-blog-row:focus-visible {
+    outline: 2px solid rgba(255, 140, 26, 0.7);
+    outline-offset: 3px;
+  }
+
+  .admin-blog-row__identity {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .admin-blog-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+  }
+
+  .admin-blog-row__date,
+  .admin-blog-row__tags,
+  .admin-blog-row__featured {
+    color: #fff;
+    font-size: 0.92rem;
+  }
+
+  .admin-blog-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    min-width: 100px;
+    padding: 0.42rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .admin-blog-pill.is-draft {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  .admin-blog-pill.is-published {
+    background: rgba(16, 185, 129, 0.16);
+    color: #d1fae5;
+    border-color: rgba(52, 211, 153, 0.32);
+  }
+
+  .admin-blog-dialog {
+    width: min(1120px, calc(100vw - 2rem));
+    max-width: 1120px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    color: inherit;
+  }
+
+  .admin-blog-dialog--compact {
+    width: min(960px, calc(100vw - 2rem));
+    max-width: 960px;
+  }
+
+  .admin-blog-dialog::backdrop {
+    background: rgba(8, 6, 14, 0.82);
+    backdrop-filter: blur(10px);
+  }
+
+  .admin-blog-dialog__panel {
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.38);
+  }
+
+  .admin-blog-dialog__header,
+  .admin-blog-dialog__footer {
+    background: rgba(13, 10, 20, 0.92);
+    backdrop-filter: blur(18px);
+  }
+
+  .admin-blog-dialog__footer {
+    position: sticky;
+    bottom: 0;
+  }
+
+  @media (max-width: 1023px) {
+    .admin-blog-head {
+      display: none;
+    }
+
+    .admin-blog-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "identity action"
+        "status date"
+        "tags featured";
+    }
+
+    .admin-blog-row__identity {
+      grid-area: identity;
+    }
+
+    .admin-blog-pill {
+      grid-area: status;
+    }
+
+    .admin-blog-row__date {
+      grid-area: date;
+    }
+
+    .admin-blog-row__tags {
+      grid-area: tags;
+    }
+
+    .admin-blog-row__featured {
+      grid-area: featured;
+    }
+
+    .admin-blog-row__action {
+      grid-area: action;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .admin-blog-dialog,
+    .admin-blog-dialog--compact {
+      width: 100vw;
+      max-width: none;
+      height: 100dvh;
+      max-height: none;
+      margin: 0;
+    }
+
+    .admin-blog-dialog__panel {
+      min-height: 100dvh;
+      border-radius: 0 !important;
+    }
+
+    .admin-blog-dialog form {
+      max-height: 100dvh !important;
+    }
+
+    .admin-blog-dialog__header,
+    .admin-blog-dialog__footer {
+      position: sticky;
+      z-index: 5;
+    }
+
+    .admin-blog-dialog__header {
+      top: 0;
+    }
+
+    .admin-blog-toolbar {
+      align-items: stretch;
+    }
+
+    .admin-blog-search {
+      width: 100%;
+    }
+
+    .admin-blog-row {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        "identity"
+        "status"
+        "date"
+        "tags"
+        "featured";
+    }
+
+    .admin-blog-row__date,
+    .admin-blog-row__tags,
+    .admin-blog-row__featured,
+    .admin-blog-pill {
+      min-width: 0;
+      padding: 0.7rem 0.75rem;
+      border-radius: 0.95rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .admin-blog-row__action {
+      display: none;
+    }
+
+    .admin-blog-dialog__body {
+      padding-left: 1rem;
+      padding-right: 1rem;
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+      scrollbar-gutter: stable;
+    }
+
+    .admin-blog-dialog__header,
+    .admin-blog-dialog__footer {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    .admin-blog-dialog__body aside > div,
+    .admin-blog-dialog__body .space-y-5 > div {
+      padding: 1rem;
+      border-radius: 1.25rem;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+
+    const confirmSubmitTrigger = target.closest("[data-confirm-submit]");
+    if (confirmSubmitTrigger instanceof HTMLButtonElement) {
+      const message = confirmSubmitTrigger.dataset.confirmSubmit;
+      if (message && !window.confirm(message)) {
+        event.preventDefault();
+      }
+      return;
+    }
+
+    const openTrigger = target.closest("[data-open-dialog]");
+    if (openTrigger instanceof HTMLElement) {
+      const dialogId = openTrigger.dataset.openDialog;
+      const dialog = dialogId ? document.getElementById(dialogId) : null;
+      if (dialog instanceof HTMLDialogElement) {
+        dialog.showModal();
+      }
+      return;
+    }
+
+    const closeTrigger = target.closest("[data-close-dialog]");
+    if (closeTrigger instanceof HTMLElement) {
+      const dialog = closeTrigger.closest("dialog");
+      if (dialog instanceof HTMLDialogElement) {
+        dialog.close();
+      }
+    }
+  });
+
+  document.addEventListener("input", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
+    if (!target.matches("[data-blog-search]")) return;
+
+    const query = target.value.trim().toLowerCase();
+    const rows = document.querySelectorAll("[data-blog-row]");
+    let visibleCount = 0;
+
+    rows.forEach((row) => {
+      if (!(row instanceof HTMLElement)) return;
+      const value = row.dataset.blogSearchValue || "";
+      const match = !query || value.includes(query);
+      row.style.display = match ? "" : "none";
+      if (match) visibleCount += 1;
+    });
+
+    const emptyState = document.querySelector("[data-blog-empty]");
+    if (emptyState instanceof HTMLElement) {
+      emptyState.classList.toggle("hidden", visibleCount > 0);
+    }
+  });
+
+  document.querySelectorAll("dialog[data-admin-dialog]").forEach((dialogNode) => {
+    if (!(dialogNode instanceof HTMLDialogElement)) return;
+
+    dialogNode.addEventListener("cancel", () => {
+      dialogNode.close();
+    });
+
+    dialogNode.addEventListener("click", (event) => {
+      if (event.target === dialogNode) {
+        dialogNode.close();
+      }
+    });
+  });
+</script>

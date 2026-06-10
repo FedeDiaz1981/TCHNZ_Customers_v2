@@ -1,0 +1,64 @@
+---
+import { getCustomerLocale } from "../../../lib/i18n/customers";
+import { getSectionHrefForPath } from "../../../lib/portal/hosts";
+import { moduleRequiresAuth } from "../../../lib/portal/modules";
+
+const supabase = Astro.locals.supabase;
+const portalModule = Astro.locals.portalModule;
+const requiresAuth = moduleRequiresAuth(portalModule);
+
+if (requiresAuth && !supabase) {
+  return Astro.redirect(getSectionHrefForPath(Astro.url, "/login"));
+}
+
+const locale = getCustomerLocale(Astro.url, Astro.cookies);
+const backToAppsHref = getSectionHrefForPath(Astro.url, "/clientes/aplicaciones");
+const appHref = getSectionHrefForPath(
+  Astro.url,
+  "/customers/apps/reconversion-fichadas-v1/index.html"
+);
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{locale === "en" ? "Time Clock Conversion V1 | Technized Clients" : "Reconversion fichadas V1 | Technized Clientes"}</title>
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: #09070d;
+        font-family: Inter, system-ui, sans-serif;
+      }
+      .topbar {
+        height: 64px;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        background: #120c18;
+      }
+      .back {
+        color: #f4f1f8;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .frame {
+        display: block;
+        width: 100%;
+        height: calc(100vh - 64px);
+        border: 0;
+        background: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <a class="back" href={backToAppsHref}>← {locale === "en" ? "Back to applications" : "Volver a aplicaciones"}</a>
+    </div>
+    <iframe class="frame" src={appHref} title="Reconversion fichadas V1"></iframe>
+  </body>
+</html>
+
