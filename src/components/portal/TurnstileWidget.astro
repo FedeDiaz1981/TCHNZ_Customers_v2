@@ -28,7 +28,7 @@ const ui = getCustomerUi(locale).turnstile;
             aria-checked="false"
           >
             <span class="portal-turnstile-box" aria-hidden="true">
-              <i class="fa-solid fa-check"></i>
+              <span class="portal-turnstile-checkmark">✓</span>
             </span>
             <span class="portal-turnstile-copy">
               <strong class="portal-turnstile-title">{ui.title}</strong>
@@ -98,6 +98,16 @@ const ui = getCustomerUi(locale).turnstile;
       transform 180ms ease;
   }
 
+  .portal-turnstile-checkmark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.88rem;
+    font-weight: 900;
+    line-height: 1;
+    transform: translateY(-0.03rem);
+  }
+
   .portal-turnstile-copy {
     display: grid;
     gap: 0.25rem;
@@ -151,7 +161,7 @@ const ui = getCustomerUi(locale).turnstile;
     color: rgba(255, 140, 26, 0.9);
   }
 
-  [data-turnstile-state="loading"] .portal-turnstile-box i {
+  [data-turnstile-state="loading"] .portal-turnstile-checkmark {
     animation: portal-turnstile-pulse 1s ease-in-out infinite;
   }
 

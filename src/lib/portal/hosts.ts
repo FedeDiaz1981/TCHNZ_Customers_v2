@@ -98,12 +98,12 @@ export function buildAuthUrl(currentUrl: URL, pathname: string, module = getCurr
 
 export function getSharedCookieDomain(currentUrl: URL) {
   if (!supportsSectionHosts(currentUrl)) return undefined;
-  if (portalBasePath) return undefined;
+  if (isLocalPortalHostname(currentUrl.hostname)) return undefined;
 
   const module = getCurrentPortalModule(currentUrl);
   if (!moduleRequiresAuth(module)) return undefined;
 
-  return `.${getModuleAuthHostname(module)}`;
+  return `.${portalBaseDomain}`;
 }
 
 function getSectionForInternalPath(module: PortalModule, pathname: string) {
@@ -163,6 +163,28 @@ function buildSingleHostSectionUrl(module: PortalModule, section: PortalSection,
 function buildLocalSectionPath(module: PortalModule, section: PortalSection, externalPath = "/") {
   void module;
   return buildSingleHostSectionPath(section, externalPath);
+}
+
+function getExternalPathForSingleHostSection(section: PortalSection, pathname: string) {
+  if (section === "auth") {
+    return pathname;
+  }
+
+  const sectionSegment = singleHostSectionSegments[section];
+  if (!sectionSegment) {
+    return pathname;
+  }
+
+  const prefix = `/${sectionSegment}`;
+  if (pathname === prefix) {
+    return "/";
+  }
+
+  if (pathname.startsWith(`${prefix}/`)) {
+    return pathname.slice(prefix.length);
+  }
+
+  return pathname;
 }
 
 function getSectionFromSingleHostPath(pathname: string): PortalSection | null {
@@ -231,7 +253,7 @@ export function getSectionHrefForPath(currentUrl: URL, internalPath: string) {
   }
 
   if (!supportsSectionHosts(currentUrl)) {
-    return internalPath;
+    return withPortalBasePath(internalPath);
   }
 
   return buildSingleHostSectionUrl(
@@ -297,7 +319,11 @@ export function getCanonicalSectionUrl(currentUrl: URL) {
   const currentAuthHostname = getSectionHostname(currentModule, "auth");
 
   if (currentSection !== "auth" && currentUrl.hostname !== currentAuthHostname) {
-    const target = buildSingleHostSectionUrl(currentModule, currentSection, currentPathname);
+    const target = buildSingleHostSectionUrl(
+      currentModule,
+      currentSection,
+      getExternalPathForSingleHostSection(currentSection, currentPathname)
+    );
     target.search = currentUrl.search;
     return target;
   }

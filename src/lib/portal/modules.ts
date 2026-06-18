@@ -1,3 +1,5 @@
+import { safeParseAbsoluteUrl } from "../url";
+
 export type PortalModule = "customers" | "consultant" | "comercial" | "support";
 export type ManagedPortalSection = "tools" | "blog" | "training" | "management";
 export type PortalSection = "auth" | ManagedPortalSection;
@@ -154,7 +156,12 @@ function getConfiguredBaseDomain() {
   const configuredBaseDomain = import.meta.env.PUBLIC_PORTAL_BASE_DOMAIN?.trim();
   if (configuredBaseDomain) return configuredBaseDomain;
 
-  const siteHostname = new URL(import.meta.env.PUBLIC_SITE_URL).hostname;
+  const siteUrl = safeParseAbsoluteUrl(import.meta.env.PUBLIC_SITE_URL);
+  if (!siteUrl) {
+    return "localhost";
+  }
+
+  const siteHostname = siteUrl.hostname;
   if (localHostnames.has(siteHostname)) return siteHostname;
 
   const parts = siteHostname.split(".").filter(Boolean);

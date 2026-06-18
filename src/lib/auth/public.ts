@@ -1,15 +1,18 @@
 import { withPortalBasePath } from "../portal/base-path";
+import { safeParseAbsoluteUrl } from "../url";
 
 export const publicSiteUrl = import.meta.env.PUBLIC_SITE_URL;
 export const publicHomeUrl = import.meta.env.PUBLIC_HOME_URL;
 export const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 
 function getConfiguredSiteUrl() {
-  if (!publicSiteUrl) {
+  const parsedUrl = safeParseAbsoluteUrl(publicSiteUrl);
+
+  if (!parsedUrl) {
     throw new Error("Missing PUBLIC_SITE_URL environment variable.");
   }
 
-  return new URL(publicSiteUrl);
+  return parsedUrl;
 }
 
 export function buildPublicSiteUrl(pathname: string) {

@@ -50,6 +50,14 @@ function buildContentSecurityPolicy() {
     "https://cdn.jsdelivr.net"
   ];
 
+  const styleSrcElem = [
+    "'self'",
+    "'unsafe-inline'",
+    "https://fonts.googleapis.com",
+    "https://cdnjs.cloudflare.com",
+    "https://cdn.jsdelivr.net"
+  ];
+
   const scriptSrc = [
     "'self'",
     "'unsafe-inline'",
@@ -76,7 +84,12 @@ function buildContentSecurityPolicy() {
     "https://www.google.com",
     "https://www.gstatic.com"
   ];
-  const formAction = ["'self'", "https://formsubmit.co"];
+  const formAction = [
+    "'self'",
+    "https://technized.com",
+    "https://www.technized.com",
+    "https://formsubmit.co"
+  ];
 
   return [
     "default-src 'self'",
@@ -84,7 +97,7 @@ function buildContentSecurityPolicy() {
     "object-src 'none'",
     "frame-ancestors 'self'",
     `style-src ${styleSrc.join(" ")}`,
-    `style-src-elem ${styleSrc.join(" ")}`,
+    `style-src-elem ${styleSrcElem.join(" ")}`,
     `script-src ${scriptSrc.join(" ")}`,
     `script-src-elem ${scriptSrc.join(" ")}`,
     `connect-src ${connectSrc.join(" ")}`,
